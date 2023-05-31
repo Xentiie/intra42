@@ -5,6 +5,7 @@ import urllib
 import typing
 from urllib import parse
 import typing
+import time
 
 KEYCLOAK = "https://profile.intra.42.fr/users/auth/keycloak_student"
 SEND_FORM = "https://auth.42.fr/auth/realms/students-42/login-actions/authenticate"
@@ -29,17 +30,10 @@ class SraperError(Exception):
 class IntraScraper:
 	def __init__(self, creds:Creds = {}):
 		self.token: Token
-		self.creds = creds
 		self.token = {}
 		self.session = requests.session()
 
-	def set_login(self, login:str):
-		self.creds["login"] = login
-
-	def set_password(self, password:str):
-		self.creds["password"] = password
-
-	def get_token(self) -> str:
+	def get_token(self, login:str, password:str) -> Token:
 
 		response = self.session.get(KEYCLOAK)
 		connect_page = response.content
@@ -48,7 +42,7 @@ class IntraScraper:
 		form = soup.find("form", {"id": "kc-form-login"})
 		send_forms_params = {t[0]:t[1] for t in urllib.parse.parse_qsl(form["action"].split('?')[1])}
 
-		data = urllib.parse.urlencode({"username":self.creds['login'], "password":self.creds['password']})
+		data = urllib.parse.urlencode({"username":login, "password":password})
 		x = self.session.post(SEND_FORM,
 			data=data,
 			headers=self.session.headers.update({
@@ -59,12 +53,16 @@ class IntraScraper:
 
 		cookie = x.cookies.get("_intra_42_session_production")
 		for c in x.cookies:
-			print(c.name, c.name == '_intra_42_session_production', c.expires)
 			if c.name == '_intra_42_session_production':
 				self.token["expires"] = c.expires
 		self.token["cookie"] = cookie
+		return self.token
 
 	def do_request(self, f, *args, **kwargs):
+
+		if self.token["expires"] >= time.time():
+			print("Token seems to be expired...")
+
 		if ("cookies" in kwargs):
 			kwargs["cookies"].update({"_intra_42_session_production":self.token["cookie"]})
 		else:
@@ -118,7 +116,6 @@ def get_ssh_key(scraper:IntraScraper = SCRAPER) -> SSHKey:
 		name = None
 
 	tree_p = soup.find("div", {"id":"keymodal-365993"})
-	print(tree_p.prettify())
 	try:
 		tree_values = tree_p.find("table").find_all("tr")[1].find_all("th", {"style":'font-weight: normal;'})
 	except Exception as e:
