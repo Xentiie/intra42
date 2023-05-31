@@ -6,6 +6,9 @@ import typing
 from urllib import parse
 import typing
 import time
+from typing import Callable, TypeVar
+
+T = TypeVar('T')
 
 KEYCLOAK = "https://profile.intra.42.fr/users/auth/keycloak_student"
 SEND_FORM = "https://auth.42.fr/auth/realms/students-42/login-actions/authenticate"
@@ -58,9 +61,9 @@ class IntraScraper:
 		self.token["cookie"] = cookie
 		return self.token
 
-	def do_request(self, f, *args, **kwargs):
+	def do_request(self, f: Callable[..., T], *args, **kwargs) -> T:
 
-		if self.token["expires"] >= time.time():
+		if time.time() >= self.token["expires"]:
 			print("Token seems to be expired...")
 
 		if ("cookies" in kwargs):
