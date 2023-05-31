@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='intra42',
-    version='0.1.4',
+    version='0.1.5',
     description='Intra 42 utility package',
     url='https://github.com/Xentiie/py_intra42',
     author='Rémi Claire',
