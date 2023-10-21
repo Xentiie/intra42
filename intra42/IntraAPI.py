@@ -123,10 +123,10 @@ class IntraAPI:
 				continue
 
 	def json_path(self, url:str, id=None) -> str:
-		path = self.json_save_folder + url.removeprefix('http://').removeprefix('https://')
+		path = url.removeprefix('http://').removeprefix('https://')
 		if (id):
 			path += f"_{id}"
-		return path.translate(trans)
+		return self.json_save_folder + "/" + path.translate(trans)
 
 	def create_file_for_url(self, url:str, id:str=None) -> typing.IO:
 		if (not os.path.isdir(self.json_save_folder)):
@@ -153,14 +153,13 @@ class IntraAPI:
 
 		for t in self.tokens:
 			if (t.is_ready()):
-				print()
 				headers = kwargs.pop("headers", {})
 				headers.update({"Authorization":"Bearer " + t.get_token()})
 				resp = method(url, *args, **kwargs, headers=headers)
 				try:
 					data = resp.json()
 					if (data and len(data) != 0):
-						f = IntraAPI.create_file_for_url(url, path_id)
+						f = self.create_file_for_url(url, path_id)
 						json.dump(data, f, indent=4)
 						f.close()
 				except Exception as e:
@@ -168,7 +167,7 @@ class IntraAPI:
 				return data
 		print(f"Retry {retry}...", end='\r')
 		sleep(0.1)
-		return self.make_request(method, *args, retry=retry+1, **kwargs)
+		return self.make_json_request(method, url, *args, update=update, path_id=path_id, retry=retry+1, **kwargs)
 
 	def make_request(self, method: typing.Callable[..., T], *args, retry=0, **kwargs) -> T:
 		for t in self.tokens:
