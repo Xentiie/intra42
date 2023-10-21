@@ -159,7 +159,7 @@ class IntraAPI:
 				resp = method(url, *args, **kwargs, headers=headers)
 				try:
 					data = resp.json()
-					if (len(data) != 0):
+					if (data and len(data) != 0):
 						f = IntraAPI.create_file_for_url(url, path_id)
 						json.dump(data, f, indent=4)
 						f.close()
@@ -187,7 +187,7 @@ def get_all_pages(apiintra:IntraAPI, url:str, *args, id:str="", **kwargs):
 		params["page[size]"] = 100
 	page = params.get("page[number]", 1)
 
-	while (len(x) != 0):
+	while (x and len(x) != 0):
 		params["page[number]"] = page
 		x=apiintra.make_json_request(requests.get,
 			url,
@@ -195,7 +195,7 @@ def get_all_pages(apiintra:IntraAPI, url:str, *args, id:str="", **kwargs):
 			params=params,
 			path_id=f"{id}_page{page}"
 		)
-		if (len(x) != 0):
+		if (x and len(x) != 0):
 			result += x
 		page += 1
 	return result
